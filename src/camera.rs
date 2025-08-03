@@ -1,4 +1,7 @@
+use std::default;
 use bevy::app::*;
+use bevy::core_pipeline::bloom::{Bloom, BloomCompositeMode};
+use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::input::mouse::MouseWheel;
 use bevy::input::ButtonInput;
 use bevy::math::Vec3;
@@ -15,11 +18,26 @@ impl Plugin for CameraPlugin {
 }
 
 fn setup(mut commands: Commands) {
-    let mut cam_bundle = Camera2dBundle::default();
-    cam_bundle.transform.scale.x += 250.;
-    cam_bundle.transform.scale.y += 250.;
-    commands.spawn(cam_bundle);
-
+    let mut transform = Transform::default();
+    transform.scale.x += 65.;
+    transform.scale.y += 65.;
+    commands.spawn((
+        Camera2d,
+        Camera {
+            hdr: true,
+            ..default()
+        },
+        Tonemapping::TonyMcMapface,
+        Bloom {
+            intensity: 0.15,
+            low_frequency_boost: 0.7,
+            low_frequency_boost_curvature: 0.95,
+            high_pass_frequency: 1.0,
+            composite_mode: BloomCompositeMode::EnergyConserving,
+            ..default()
+        },
+        transform
+    ));
 }
 
 fn camera_movement(
@@ -30,18 +48,18 @@ fn camera_movement(
     if let Some((_, mut transform)) = query.iter_mut().next() {
         let mut movement = Vec3::ZERO;
         if keyboard_input.pressed(KeyCode::KeyW) {
-            movement.y += 1.0;
+            movement.y += 5.0;
         }
         if keyboard_input.pressed(KeyCode::KeyS) {
-            movement.y -= 1.0;
+            movement.y -= 5.0;
         }
         if keyboard_input.pressed(KeyCode::KeyA) {
-            movement.x -= 1.0;
+            movement.x -= 5.0;
         }
         if keyboard_input.pressed(KeyCode::KeyD) {
-            movement.x += 1.0;
+            movement.x += 5.0;
         }
-        transform.translation += movement * time.delta_secs() * 100.0;
+        transform.translation += movement * time.delta_secs() * 10000.0;
     }
 }
 
@@ -52,9 +70,9 @@ fn camera_zoom(
     mouse_wheel.read().for_each(|mouse_wheel_movement| {
         if let Some((_, mut transform)) = query.iter_mut().next() {
             let zoom_delta = mouse_wheel_movement.y * CAMERA_SPEED;
-            transform.scale = transform.scale - Vec3::splat(zoom_delta * 0.1);
-            transform.scale.x = transform.scale.x.clamp(0.1, 10.0);
-            transform.scale.y = transform.scale.y.clamp(0.1, 10.0);
+            transform.scale = transform.scale - Vec3::splat(zoom_delta * 50.);
+            transform.scale.x = transform.scale.x.clamp(0.1, 1000.0);
+            transform.scale.y = transform.scale.y.clamp(0.1, 1000.0);
         }
     });
 
